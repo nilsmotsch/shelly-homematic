@@ -1,0 +1,20 @@
+# Dependencies / build output
+node_modules/
+dist/
+dist-addon/
+build/
+build-cache/
+
+# Local runtime state (contains your device MACs, IPs, exposure map)
+config.json
+config.test.json
+devices.json
+ccu-callbacks.json
+*.log
+
+# Local deploy credentials — never commit
+.env.local
+
+# Editor/OS noise
+.DS_Store
+.claude/

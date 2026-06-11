@@ -1,0 +1,28 @@
+{
+  "shelly": {
+    "discovery": {
+      "mdns": true,
+      "rescanInterval": 300
+    },
+    "manualDevices": [],
+    "pollInterval": 5000
+  },
+  "hm": {
+    "interfaceName": "ShellyHM",
+    "port": 2121,
+    "bindHost": "0.0.0.0",
+    "regaUrl": "http://127.0.0.1:8181/tclrega.exe"
+  },
+  "devices": {
+    "defaultExposed": false,
+    "exposed": {}
+  },
+  "web": {
+    "enabled": true,
+    "port": 8081
+  },
+  "logging": {
+    "level": "info",
+    "file": ""
+  }
+}

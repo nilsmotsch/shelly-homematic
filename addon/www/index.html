@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Shelly Homematic</title>
+  <script>
+    var port = 8080;
+    var target = window.location.protocol + "//" + window.location.hostname + ":" + port + "/";
+    window.location.replace(target);
+  </script>
+</head>
+<body>
+  <p>Opening Shelly-Homematic configuration&hellip;</p>
+  <p>If you are not redirected automatically, click
+    <a id="link" href="#">here</a>.
+  </p>
+  <script>
+    document.getElementById("link").href = target;
+  </script>
+</body>
+</html>

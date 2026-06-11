@@ -1,0 +1,146 @@
+#!/bin/sh
+ADDON_NAME=shelly-homematic
+ADDON_DIR=/usr/local/addons/${ADDON_NAME}
+CONFIG_DIR=/usr/local/etc/config
+ADDONCFG_DIR=${CONFIG_DIR}/addons/${ADDON_NAME}
+PIDFILE=/var/run/${ADDON_NAME}.pid
+LOGFILE=${ADDONCFG_DIR}/${ADDON_NAME}.log
+VER=$(cat ${ADDON_DIR}/VERSION 2>/dev/null || echo "0.0.0")
+
+export SHELLY_HOMEMATIC_DATA_DIR=${ADDONCFG_DIR}
+
+# Load Shelly credentials from creds file if present — never baked into config.
+if [ -f ${ADDONCFG_DIR}/shelly.env ]; then
+  . ${ADDONCFG_DIR}/shelly.env
+fi
+
+NODE=${ADDON_DIR}/node/bin/node
+if ! ${NODE} -v >/dev/null 2>&1; then
+  NODE=node
+fi
+
+# --- CCU interface registration -------------------------------------------
+# The CCU regenerates the live InterfacesList.xml at boot from a template, so a
+# one-time edit does not survive a reboot. We (re)register our <ipc> entry into
+# BOTH the live list and the template on every boot, mirroring how CUxD/HVL keep
+# their entry alive. This runs at S55 (run-parts -a init) — before ReGaHss at
+# S70 reads the list — and do_start brings the daemon up here too so port 2121
+# is listening when ReGa calls init().
+IFACE_NAME=ShellyHM
+IFACE_LIVE=${CONFIG_DIR}/InterfacesList.xml
+IFACE_TPL=/etc/config_templates/InterfacesList.xml
+# tab-indented <ipc> block matching the existing entries' layout
+IFACE_SED='s#</interfaces>#\t<ipc>\n\t\t<name>ShellyHM</name>\n\t\t<url>xmlrpc://127.0.0.1:2121</url>\n\t\t<info>ShellyHM</info>\n\t</ipc>\n</interfaces>#'
+
+add_iface() {
+  [ -f "$1" ] || return 0
+  grep -q "<name>${IFACE_NAME}</name>" "$1" && return 0
+  sed -i "$1" -e "${IFACE_SED}"
+}
+
+# delete the whole <ipc>…<name>ShellyHM</name>…</ipc> block (CUxD's pattern)
+del_iface() {
+  [ -f "$1" ] || return 0
+  sed -i "$1" -e '/<ipc>/{:a;N;/<\/ipc>/!ba};/<name>ShellyHM<\/name>/d'
+}
+
+register_interface() {
+  add_iface "${IFACE_LIVE}"
+  if [ -f "${IFACE_TPL}" ] && ! grep -q "<name>${IFACE_NAME}</name>" "${IFACE_TPL}"; then
+    mount -o remount,rw / 2>/dev/null
+    add_iface "${IFACE_TPL}"
+    mount -o remount,ro / 2>/dev/null
+  fi
+}
+
+deregister_interface() {
+  del_iface "${IFACE_LIVE}"
+  if [ -f "${IFACE_TPL}" ]; then
+    mount -o remount,rw / 2>/dev/null
+    del_iface "${IFACE_TPL}"
+    mount -o remount,ro / 2>/dev/null
+  fi
+}
+# --------------------------------------------------------------------------
+
+do_start() {
+  # already running? (init at S55 starts us; the later S98 start must no-op)
+  if [ -f ${PIDFILE} ] && kill -0 "$(cat ${PIDFILE} 2>/dev/null)" 2>/dev/null; then
+    return 0
+  fi
+  mkdir -p ${ADDONCFG_DIR}
+  start-stop-daemon --start --quiet --oknodo --make-pidfile --background \
+    --pidfile ${PIDFILE} \
+    --exec /bin/sh -- -c "exec ${NODE} ${ADDON_DIR}/dist/index.js >> ${LOGFILE} 2>&1"
+  logger -t homematic -p user.info "started ${ADDON_NAME}"
+}
+
+do_stop() {
+  PID=$(cat ${PIDFILE} 2>/dev/null)
+  start-stop-daemon -K -q -o -p ${PIDFILE}
+  if [ -n "${PID}" ]; then
+    n=0
+    while kill -0 ${PID} 2>/dev/null; do
+      n=$((n+1))
+      if [ ${n} -eq 20 ]; then
+        kill -9 ${PID} 2>/dev/null
+      elif [ ${n} -gt 25 ]; then
+        break
+      fi
+      sleep 1
+    done
+  fi
+  rm -f ${PIDFILE}
+  logger -t homematic -p user.info "stopped ${ADDON_NAME}"
+}
+
+case "$1" in
+  ""|init|start)
+    register_interface
+    do_start
+    ;;
+  stop)
+    do_stop
+    ;;
+  restart)
+    do_stop
+    sleep 2
+    register_interface
+    do_start
+    ;;
+  info)
+    echo "Info: <center><b>Shelly Homematic</b><p>Bridges Shelly devices to the Homematic CCU as virtual HM devices</p></center>"
+    echo "Name: Shelly Homematic"
+    echo "Version: ${VER}"
+    echo "Operations: uninstall restart"
+    echo "Config-Url: /addons/${ADDON_NAME}/index.html"
+    echo "Update: /addons/${ADDON_NAME}/update-check.cgi"
+    ;;
+  uninstall)
+    logger -t homematic -p user.info "removing ${ADDON_NAME}"
+    do_stop 2>/dev/null
+    tclsh <<EOF
+set f ${CONFIG_DIR}/hm_addons.cfg
+if {[file exists \$f]} {
+  set fd [open \$f r]; set d [read \$fd]; close \$fd
+  set out {}
+  foreach {k v} \$d {
+    if {\$k != "${ADDON_NAME}"} { lappend out \$k \$v }
+  }
+  set fd [open \$f w]; puts -nonewline \$fd \$out; close \$fd
+}
+EOF
+    # Remove the interface entry from the live list and the template
+    deregister_interface
+    rm -rf ${ADDON_DIR}
+    rm -f ${CONFIG_DIR}/rc.d/${ADDON_NAME}
+    rm -rf ${CONFIG_DIR}/addons/www/${ADDON_NAME}
+    rm -rf ${ADDONCFG_DIR}
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|info|uninstall}" >&2
+    exit 1
+    ;;
+esac
+
+exit 0
