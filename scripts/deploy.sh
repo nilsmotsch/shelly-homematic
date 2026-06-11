@@ -87,8 +87,34 @@ if [ "${1:-}" = "--first" ]; then
   ${SCP} "${ROOT_DIR}/addon/rc.d/${ADDON_NAME}" "${CCU_SSH_USER}@${CCU_HOST}:${RCD}"
   ${SSH} "chmod +x ${RCD}"
 
-  # Symlink Node 18 from matter-homematic
-  ${SSH} "ln -sfn /usr/local/addons/matter-homematic/node ${ADDON_DIR}/node"
+  # Install the bundled Node 18 runtime (same binary the addon tarball ships).
+  # No symlinking to other addons — the install must work standalone, exactly
+  # like a production tarball install (uninstalling matter-homematic must not
+  # break this addon). Reuses build-cache/, uploads only when missing/outdated.
+  NODE_VERSION=18.20.8
+  NODE_TARBALL="node-v${NODE_VERSION}-linux-armv6l.tar.xz"
+  NODE_URL="https://unofficial-builds.nodejs.org/download/release/v${NODE_VERSION}/${NODE_TARBALL}"
+  NODE_SHA256=8f9acd04d60219af8f8a3024b297f9e5c0be218bd9f196f211ce9aa7f75392c7
+  NODE_CACHE_DIR="${ROOT_DIR}/build-cache"
+  REMOTE_NODE_VER=$(${SSH} "[ ! -L ${ADDON_DIR}/node ] && ${ADDON_DIR}/node/bin/node -v 2>/dev/null" || true)
+  if [ "${REMOTE_NODE_VER}" = "v${NODE_VERSION}" ]; then
+    echo "==> Bundled Node v${NODE_VERSION} already installed"
+  else
+    echo "==> Installing bundled Node v${NODE_VERSION} (was: '${REMOTE_NODE_VER:-symlink/none}')"
+    mkdir -p "${NODE_CACHE_DIR}"
+    if [ ! -f "${NODE_CACHE_DIR}/${NODE_TARBALL}" ]; then
+      curl -fsSL -o "${NODE_CACHE_DIR}/${NODE_TARBALL}.tmp" "${NODE_URL}"
+      mv "${NODE_CACHE_DIR}/${NODE_TARBALL}.tmp" "${NODE_CACHE_DIR}/${NODE_TARBALL}"
+    fi
+    echo "${NODE_SHA256}  ${NODE_CACHE_DIR}/${NODE_TARBALL}" | shasum -a 256 -c - >/dev/null
+    NODE_TMP=$(mktemp -d)
+    tar -xJf "${NODE_CACHE_DIR}/${NODE_TARBALL}" -C "${NODE_TMP}" \
+      --strip-components=2 "node-v${NODE_VERSION}-linux-armv6l/bin/node"
+    ${SSH} "rm -rf ${ADDON_DIR}/node && mkdir -p ${ADDON_DIR}/node/bin"
+    ${SCP} "${NODE_TMP}/node" "${CCU_SSH_USER}@${CCU_HOST}:${ADDON_DIR}/node/bin/node"
+    ${SSH} "chmod 755 ${ADDON_DIR}/node/bin/node && touch ${ADDON_DIR}/node/.nobackup"
+    rm -rf "${NODE_TMP}"
+  fi
 
   # Register the <ipc> entry into BOTH the live list and the boot template (the
   # live file is regenerated from the template at boot). The rc.d init case also
