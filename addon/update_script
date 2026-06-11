@@ -1,0 +1,58 @@
+#!/bin/sh
+# CCU/RaspberryMatic addon installer for shelly-homematic.
+# Invoked by the WebUI installer with the platform name as $1.
+
+ADDONNAME=shelly-homematic
+CONFIG_DIR=/usr/local/etc/config
+ADDON_DIR=/usr/local/addons/${ADDONNAME}
+ADDONWWW_DIR=${CONFIG_DIR}/addons/www
+ADDONCFG_DIR=${CONFIG_DIR}/addons/${ADDONNAME}
+RCD_DIR=${CONFIG_DIR}/rc.d
+
+if [ "$1" != "HM-RASPBERRYMATIC" ] && [ "$1" != "CCU3" ]; then
+  echo "shelly-homematic: unsupported platform '$1'" >&2
+  exit 1
+fi
+
+mount | grep /usr/local >/dev/null 2>&1 || mount /usr/local
+
+rm -rf ${ADDON_DIR}
+mkdir -p ${ADDON_DIR}
+cp -af shelly-homematic/. ${ADDON_DIR}/
+chmod 755 ${ADDON_DIR}
+
+mkdir -p ${RCD_DIR}
+cp -af rc.d/${ADDONNAME} ${RCD_DIR}/${ADDONNAME}
+chmod +x ${RCD_DIR}/${ADDONNAME}
+
+mkdir -p ${ADDONWWW_DIR}/${ADDONNAME}
+cp -af www/. ${ADDONWWW_DIR}/${ADDONNAME}/
+chmod +x ${ADDONWWW_DIR}/${ADDONNAME}/update-check.cgi 2>/dev/null
+
+mkdir -p ${ADDONCFG_DIR}
+
+HM_ADDONS_CFG=${CONFIG_DIR}/hm_addons.cfg
+touch ${HM_ADDONS_CFG}
+if ! grep -q "ID ${ADDONNAME}" ${HM_ADDONS_CFG}; then
+  printf '%s' " ${ADDONNAME} {CONFIG_URL /addons/${ADDONNAME}/index.html CONFIG_DESCRIPTION {de {<li>Shelly Ger&auml;te als Homematic Ger&auml;te</li>} en {<li>Shelly devices as Homematic virtual devices</li>}} ID ${ADDONNAME} CONFIG_NAME {Shelly Homematic}}" >> ${HM_ADDONS_CFG}
+fi
+
+# Register the HM virtual interface so the CCU treats Shellys as native HM
+# devices. The live InterfacesList.xml is regenerated at boot from the template,
+# so register into BOTH (the rc.d also re-adds on every boot as a safety net).
+IFACE_SED='s#</interfaces>#\t<ipc>\n\t\t<name>ShellyHM</name>\n\t\t<url>xmlrpc://127.0.0.1:2121</url>\n\t\t<info>ShellyHM</info>\n\t</ipc>\n</interfaces>#'
+for IFACES in ${CONFIG_DIR}/InterfacesList.xml /etc/config_templates/InterfacesList.xml; do
+  [ -f ${IFACES} ] || continue
+  grep -q "<name>ShellyHM</name>" ${IFACES} && continue
+  case ${IFACES} in /etc/*) mount -o remount,rw / 2>/dev/null ;; esac
+  sed -i "${IFACES}" -e "${IFACE_SED}"
+  case ${IFACES} in /etc/*) mount -o remount,ro / 2>/dev/null ;; esac
+done
+
+sync
+
+if [ ! -f ${ADDONCFG_DIR}/.installed ]; then
+  touch ${ADDONCFG_DIR}/.installed
+  exit 10
+fi
+exit 0
