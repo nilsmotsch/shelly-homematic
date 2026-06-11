@@ -38,10 +38,14 @@ add_iface() {
   sed -i "$1" -e "${IFACE_SED}"
 }
 
-# delete the whole <ipc>…<name>ShellyHM</name>…</ipc> block (CUxD's pattern)
+# delete the whole <ipc>…<name>ShellyHM</name>…</ipc> block (CUxD's pattern).
+# Busybox sed rejects ';'-separated label syntax ("unterminated {") — labels
+# and braces must be separate -e expressions. Any stderr here also breaks the
+# WebUI uninstall: cp_software.cgi runs us via tcl exec, which treats stderr
+# output as failure.
 del_iface() {
   [ -f "$1" ] || return 0
-  sed -i "$1" -e '/<ipc>/{:a;N;/<\/ipc>/!ba};/<name>ShellyHM<\/name>/d'
+  sed -i "$1" -e '/<ipc>/{' -e ':a' -e 'N' -e '/<\/ipc>/!ba' -e '}' -e '/<name>ShellyHM<\/name>/d'
 }
 
 register_interface() {
@@ -103,10 +107,14 @@ case "$1" in
     do_stop
     ;;
   restart)
-    do_stop
-    sleep 2
-    register_interface
-    do_start
+    # WebUI ops (restart/uninstall) run via tcl exec in cp_software.cgi, which
+    # reports "Failure" if anything reaches stderr — keep these branches silent.
+    {
+      do_stop
+      sleep 2
+      register_interface
+      do_start
+    } >/dev/null 2>&1
     ;;
   info)
     echo "Info: <center><b>Shelly Homematic</b><p>Bridges Shelly devices to the Homematic CCU as virtual HM devices</p></center>"
@@ -118,8 +126,9 @@ case "$1" in
     ;;
   uninstall)
     logger -t homematic -p user.info "removing ${ADDON_NAME}"
-    do_stop 2>/dev/null
-    tclsh <<EOF
+    {
+      do_stop
+      tclsh <<EOF
 set f ${CONFIG_DIR}/hm_addons.cfg
 if {[file exists \$f]} {
   set fd [open \$f r]; set d [read \$fd]; close \$fd
@@ -130,12 +139,13 @@ if {[file exists \$f]} {
   set fd [open \$f w]; puts -nonewline \$fd \$out; close \$fd
 }
 EOF
-    # Remove the interface entry from the live list and the template
-    deregister_interface
-    rm -rf ${ADDON_DIR}
-    rm -f ${CONFIG_DIR}/rc.d/${ADDON_NAME}
-    rm -rf ${CONFIG_DIR}/addons/www/${ADDON_NAME}
-    rm -rf ${ADDONCFG_DIR}
+      # Remove the interface entry from the live list and the template
+      deregister_interface
+      rm -rf ${ADDON_DIR}
+      rm -f ${CONFIG_DIR}/rc.d/${ADDON_NAME}
+      rm -rf ${CONFIG_DIR}/addons/www/${ADDON_NAME}
+      rm -rf ${ADDONCFG_DIR}
+    } >/dev/null 2>&1
     ;;
   *)
     echo "Usage: $0 {start|stop|restart|info|uninstall}" >&2
