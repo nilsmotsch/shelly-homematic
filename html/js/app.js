@@ -341,6 +341,26 @@ async function discoverNow() {
   }
 }
 
+async function factoryReset() {
+  const warning =
+    'Factory reset deletes ALL stored data:\n\n' +
+    '• device address mapping (devices.json)\n' +
+    '• exposure configuration (config.json)\n' +
+    '• CCU callback registrations\n\n' +
+    'Devices already learned by the CCU become orphans and must be ' +
+    're-exposed and re-taught. Use this to start over or before ' +
+    'uninstalling the addon for good.\n\nContinue?';
+  if (!confirm(warning)) return;
+  try {
+    const result = await fetchApi('factoryReset', { method: 'POST' });
+    alert(result.message || 'Stored data deleted. Bridge restarting.');
+    setTimeout(() => window.location.reload(), 3000);
+  } catch (err) {
+    console.error('factoryReset failed:', err);
+    alert('Factory reset failed. Check the log.');
+  }
+}
+
 async function restartBridge() {
   const btn = document.getElementById('restart-btn');
   if (!confirm('Restart the bridge now?')) return;
