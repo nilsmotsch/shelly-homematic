@@ -117,7 +117,7 @@ case "$1" in
     } >/dev/null 2>&1
     ;;
   info)
-    echo "Info: <center><b>Shelly Homematic</b><p>Bridges Shelly devices to the Homematic CCU as virtual HM devices</p></center>"
+    echo "Info: <center><b>Shelly Homematic</b><p>Bridges Shelly devices to the Homematic CCU as virtual HM devices</p><p><a href=\"https://github.com/nilsmotsch/shelly-homematic\" target=\"_blank\">github.com/nilsmotsch/shelly-homematic</a></p></center>"
     echo "Name: Shelly Homematic"
     echo "Version: ${VER}"
     echo "Operations: uninstall restart"
