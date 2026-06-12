@@ -12,7 +12,10 @@
 // v8: FLOAT values/MIN/MAX/DEFAULT serialized as explicit <double> — ReGa
 // stores 0 when an <int> arrives on a FLOAT datapoint (CURRENT in whole mA,
 // LEVEL at exactly 0/1).
-export const DESCRIPTOR_VERSION = 8;
+// v9: POWERMETER BOOT datapoint — the CCU's auto-created energy-statistics
+// program reads DPByControl('POWERMETER.BOOT') every minute and threw a
+// ScriptRuntimeError without it.
+export const DESCRIPTOR_VERSION = 9;
 
 export type ChannelKind =
   | 'SWITCH'
@@ -114,8 +117,14 @@ const WATER_PARAMSET: ParamsetDescription = withIds({
   STATE: { TYPE: 'ENUM', OPERATIONS: OPS_RE, FLAGS: 1, DEFAULT: 0, MIN: 0, MAX: 2, VALUE_LIST: ['DRY', 'WET', 'WATER'], TAB_ORDER: 0 },
 });
 
-// HM-ES-PMSw1-Pl channel 2 shape (subset)
+// HM-ES-PMSw1-Pl channel 2 shape (subset). BOOT is required: confirming a
+// metering device in the inbox auto-creates an energy-statistics ReGa program
+// that reads DPByControl('POWERMETER.BOOT') every minute — without the
+// datapoint it throws a ScriptRuntimeError each run and the WebUI shows the
+// "internal error" banner. BOOT means "energy counter was reset"; Shelly
+// totals persist across reboots, so it stays false.
 const POWERMETER_PARAMSET: ParamsetDescription = withIds({
+  BOOT: { TYPE: 'BOOL', OPERATIONS: OPS_RE, FLAGS: 3, DEFAULT: false, TAB_ORDER: 4, CONTROL: 'POWERMETER.BOOT' },
   POWER: { TYPE: 'FLOAT', OPERATIONS: OPS_RE, FLAGS: 1, DEFAULT: 0.0, MIN: 0.0, MAX: 3680.0, UNIT: 'W', TAB_ORDER: 0, CONTROL: 'POWERMETER.POWER' },
   ENERGY_COUNTER: { TYPE: 'FLOAT', OPERATIONS: OPS_RE, FLAGS: 1, DEFAULT: 0.0, MIN: 0.0, MAX: 838860.7, UNIT: 'Wh', TAB_ORDER: 1, CONTROL: 'POWERMETER.ENERGY_COUNTER' },
   VOLTAGE: { TYPE: 'FLOAT', OPERATIONS: OPS_RE, FLAGS: 1, DEFAULT: 0.0, MIN: 0.0, MAX: 980.0, UNIT: 'V', TAB_ORDER: 2, CONTROL: 'POWERMETER.VOLTAGE' },
