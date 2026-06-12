@@ -178,6 +178,11 @@ export interface HmChannelDescription {
 
 export interface HmDeviceDescription {
   ADDRESS: string;
+  // Always '' for devices — but it MUST be present: the WebUI's device
+  // settings CGI (ic_deviceparameters.cgi) reads dev_descr(PARENT)
+  // unguarded; a missing TCL array element crashes the whole page into
+  // "An internal error was detected in the service software".
+  PARENT: string;
   TYPE: string;
   FLAGS: number;
   VERSION: number;
@@ -312,6 +317,7 @@ export function buildDeviceDescription(
   const type = deviceTypeFor(channels);
   return {
     ADDRESS: hmAddress,
+    PARENT: '',
     TYPE: type,
     FLAGS: 1,
     VERSION: versionFor(type),
