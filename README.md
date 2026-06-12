@@ -4,7 +4,7 @@ Expose **Shelly** smart-home devices to a **Homematic CCU3 / RaspberryMatic** as
 
 Shellys discovered on your network appear on the CCU like regular BidCos radio devices — with native icons, controls, service messages and full support for CCU programs, rooms and the inbox (Posteingang) workflow. No CUxD, no MQTT broker, no cloud.
 
-It is the mirror image of the sister project [matter-homematic](https://github.com/nilsmotsch/matter-homematic) (Homematic → Matter). Here the data flows the other way: the Shelly is the source of truth, and the bridge presents an XML-RPC interface that the CCU connects to like any other (BidCos, HmIP). The two work together: Shellys bridged into the CCU by this project can be re-exported to Apple Home / Google Home via matter-homematic.
+It is the mirror image of the sister project [matter-homematic](https://github.com/nilsmotsch/matter-homematic) (Homematic → Matter). Here the data flows the other way: the Shelly is the source of truth, and the bridge presents an XML-RPC interface that the CCU connects to like any other (BidCos, HmIP). The two work together: Shellys bridged into the CCU by this project can be re-exported to Apple Home / Alexa / Google Home via matter-homematic. That combination puts the same Shelly in CCU programs **and** in your Matter ecosystems simultaneously — on the official Shelly firmware, with no reflashing and no Shelly cloud.
 
 > **Status: beta (0.9.x).** The bridge runs stably against a real CCU3, but only part of the device matrix has been verified on real hardware so far — see [Supported devices](#supported-devices) for what has actually been tested. Expect rough edges; issue reports with logs are very welcome.
 
