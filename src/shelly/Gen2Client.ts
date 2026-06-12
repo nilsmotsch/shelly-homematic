@@ -146,6 +146,7 @@ export class Gen2Client extends EventEmitter {
         if (v.apower !== undefined) this.emit('update', { component: 'switch', idx, key: 'POWER', value: v.apower });
         if (v.voltage !== undefined) this.emit('update', { component: 'switch', idx, key: 'VOLTAGE', value: v.voltage });
         if (v.current !== undefined) this.emit('update', { component: 'switch', idx, key: 'CURRENT', value: v.current });
+        if (v.freq !== undefined) this.emit('update', { component: 'switch', idx, key: 'FREQUENCY', value: v.freq });
         if (v.aenergy !== undefined) {
           const ae = v.aenergy as Record<string, unknown>;
           if (ae.total !== undefined) this.emit('update', { component: 'switch', idx, key: 'ENERGY_COUNTER', value: ae.total });
@@ -162,6 +163,7 @@ export class Gen2Client extends EventEmitter {
         if (v.act_power !== undefined) this.emit('update', { component: comp, idx, key: 'POWER', value: v.act_power });
         if (v.voltage !== undefined) this.emit('update', { component: comp, idx, key: 'VOLTAGE', value: v.voltage });
         if (v.current !== undefined) this.emit('update', { component: comp, idx, key: 'CURRENT', value: v.current });
+        if (v.freq !== undefined) this.emit('update', { component: comp, idx, key: 'FREQUENCY', value: v.freq });
         if (v.aenergy !== undefined) {
           const ae = v.aenergy as Record<string, unknown>;
           if (ae.total !== undefined) this.emit('update', { component: comp, idx, key: 'ENERGY_COUNTER', value: ae.total });
