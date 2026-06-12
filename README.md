@@ -59,7 +59,7 @@ The CCU integration itself (teach-in, native controls, device naming, service me
 
 ## Installation (CCU addon)
 
-1. Download `shelly-homematic-<version>.tar.gz` from the releases page (or build it yourself with `npm run build:addon`).
+1. Download the addon tarball: [**shelly-homematic-0.9.0.tar.gz**](https://github.com/nilsmotsch/shelly-homematic/releases/download/v0.9.0/shelly-homematic-0.9.0.tar.gz) (always newest: [latest release](https://github.com/nilsmotsch/shelly-homematic/releases/latest)) — or build it yourself with `npm run build:addon`.
 2. On the CCU WebUI: **Einstellungen → Systemsteuerung → Zusatzsoftware**, choose the tarball and install. The CCU reboots.
 3. The installer registers the `ShellyHM` interface with the CCU and starts the bridge. Open the bridge Web UI at `http://<ccu>:8081`, expose the Shellys you want, and confirm the new devices in the CCU's **Posteingang**.
 
