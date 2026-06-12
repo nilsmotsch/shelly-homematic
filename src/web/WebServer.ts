@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as url from 'url';
 import { WebSocketServer, WebSocket } from 'ws';
 import { getLogger } from '../utils/Logger';
+import { appVersion } from '../utils/Version';
 import type { ShellyDevice } from '../bridge/ShellyBridge';
 
 interface WebServerDeps {
@@ -189,6 +190,7 @@ export class WebServer {
       if (d.exposed) exposedCount++;
     }
     return {
+      version: appVersion(),
       ccuRegistered: this.deps.isCcuRegistered(),
       deviceCount: devices.size,
       exposedCount,
@@ -386,7 +388,9 @@ export class WebServer {
       }
       const ext = path.extname(filePath);
       const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-      res.writeHead(200, { 'Content-Type': contentType });
+      // no-cache: browsers otherwise heuristically cache app.js/css and keep
+      // serving stale UI logic long after a deploy (files are tiny, LAN-local)
+      res.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': 'no-cache' });
       res.end(data);
     });
   }
