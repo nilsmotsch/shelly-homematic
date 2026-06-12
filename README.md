@@ -67,7 +67,7 @@ The addon bundles its own Node.js runtime (armv7/armv6) — nothing else needs t
 
 ### Uninstall / start over
 
-Uninstalling the addon deliberately **preserves** its stored data (the device address mapping and exposure config), so an uninstall→reinstall cycle is lossless: all devices keep their `SHELLYnnnn` addresses and the CCU's room/program assignments stay intact. To wipe everything — before removing the addon for good, or to start from scratch — use the **Factory Reset** button in the Web UI dashboard (deletes the address mapping, configuration and CCU callback registrations; devices already learned by the CCU become orphans until re-exposed and re-taught).
+Uninstalling the addon removes its learned devices from the CCU (they would otherwise linger as undeletable orphans) but deliberately **preserves** its stored data (the device address mapping and exposure config). A reinstall therefore re-announces the same devices under their old `SHELLYnnnn` addresses — confirm them in the Posteingang and you're back. To wipe the stored data too — before removing the addon for good, or to start from scratch — use the **Factory Reset** button in the Web UI dashboard first (deletes the address mapping, configuration and CCU callback registrations; a CCU restart is required afterwards).
 
 ### Password-protected Shellys
 

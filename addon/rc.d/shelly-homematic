@@ -128,6 +128,25 @@ case "$1" in
     logger -t homematic -p user.info "removing ${ADDON_NAME}"
     {
       do_stop
+      # Remove our learned devices from ReGa — without this they linger as
+      # undeletable orphans: the WebUI delete flow needs deleteDevice() on
+      # our interface, which is gone after the uninstall.
+      tclsh <<'TCLEOF'
+catch {
+  load tclrega.so
+  rega_script {
+    string sDevId;
+    foreach(sDevId, dom.GetObject(ID_DEVICES).EnumUsedIDs()) {
+      object oDev = dom.GetObject(sDevId);
+      if (oDev) {
+        if (oDev.Address().Substr(0, 6) == "SHELLY") {
+          dom.DeleteObject(oDev.ID());
+        }
+      }
+    }
+  }
+}
+TCLEOF
       tclsh <<EOF
 set f ${CONFIG_DIR}/hm_addons.cfg
 if {[file exists \$f]} {
