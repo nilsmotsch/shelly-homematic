@@ -50,7 +50,7 @@ Verified on real hardware against a CCU3:
 | Shelly Mini 1 Gen3 | ✅ Tested | Switching, live state updates |
 | Shelly Mini PM Gen3 | ⚠️ Partially | Registers as power meter; readings use the same verified code path as Plus 2PM but not independently checked |
 | Shelly Plus 2PM (cover mode) | ⚠️ Partially | Registers as blind with native CCU controls; driving the cover from the CCU not yet verified |
-| Shelly Plus 0-10V Dimmer | ⚠️ Partially | Registers as dimmer with native controls; level control not yet verified |
+| Shelly Plus 0-10V Dimmer | ✅ Tested | Level control from the CCU, native dimmer UI, live state updates |
 | Shelly 2.5 (SHSW-25, Gen1) | ⚠️ Partially | Discovered, registered and taught in; Gen1 command path (switching) not yet verified |
 | Shelly Flood (SHWT-1, Gen1) | ❌ Untested | Battery/CoIoT device — discovery works, but no wake-up cycle observed yet |
 | H&T, Door/Window, Motion | ❓ No hardware | Implemented from state inference, untested — feedback welcome |
