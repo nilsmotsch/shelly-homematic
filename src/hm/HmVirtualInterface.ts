@@ -316,7 +316,7 @@ export class HmVirtualInterface {
           'system.listMethods', 'system.multicall',
           'init', 'listDevices', 'getDeviceDescription',
           'getParamsetDescription', 'getParamset', 'getValue', 'setValue',
-          'deleteDevice',
+          'putParamset', 'deleteDevice',
           'ping', 'getLinks', 'reportValueUsage', 'setMetadata', 'getMetadata',
           'getAllMetadata', 'deleteMetadata', 'getInstallMode', 'setInstallMode',
         ];
@@ -438,6 +438,29 @@ export class HmVirtualInterface {
         if (device) await this.opts.onSetValue(device.hmAddress, channelIdx, key, value);
         return '';
       }
+
+      // The settings page saves MASTER params and "Werte übertragen" sends
+      // VALUES batches through putParamset. VALUES entries go through the
+      // same path as setValue; MASTER is accepted and ignored (we have no
+      // persistent device config). Missing handler = default '' = the save
+      // button silently fails.
+      case 'putParamset': {
+        const address = params[0] as string;
+        const paramsetType = params[1] as string;
+        const values = (params[2] || {}) as Record<string, unknown>;
+        if (paramsetType === 'VALUES') {
+          const { device, channelIdx } = this.resolveAddress(address);
+          if (device) {
+            for (const [key, value] of Object.entries(values)) {
+              await this.opts.onSetValue(device.hmAddress, channelIdx, key, value);
+            }
+          }
+        }
+        return '';
+      }
+
+      case 'system.methodHelp':
+        return [];
 
       // WebUI "Löschen → Gerät ablernen": ReGa asks the interface to unlearn
       // the device and expects a deleteDevices callback as confirmation —
