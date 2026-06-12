@@ -40,11 +40,18 @@ fi
 # Register the HM virtual interface so the CCU treats Shellys as native HM
 # devices. The live InterfacesList.xml is regenerated at boot from the template,
 # so register into BOTH (the rc.d also re-adds on every boot as a safety net).
+# If the entry was MISSING from the live list (first install, or reinstall
+# after an uninstall deregistered it), the running ReGa predates it and will
+# never init() the interface — a reboot is required, not just a restart.
+IFACE_ADDED=0
 IFACE_SED='s#</interfaces>#\t<ipc>\n\t\t<name>ShellyHM</name>\n\t\t<url>xmlrpc://127.0.0.1:2121</url>\n\t\t<info>ShellyHM</info>\n\t</ipc>\n</interfaces>#'
 for IFACES in ${CONFIG_DIR}/InterfacesList.xml /etc/config_templates/InterfacesList.xml; do
   [ -f ${IFACES} ] || continue
   grep -q "<name>ShellyHM</name>" ${IFACES} && continue
-  case ${IFACES} in /etc/*) mount -o remount,rw / 2>/dev/null ;; esac
+  case ${IFACES} in
+    /etc/*) mount -o remount,rw / 2>/dev/null ;;
+    *) IFACE_ADDED=1 ;;
+  esac
   sed -i "${IFACES}" -e "${IFACE_SED}"
   case ${IFACES} in /etc/*) mount -o remount,ro / 2>/dev/null ;; esac
 done
@@ -55,7 +62,11 @@ if [ ! -f ${ADDONCFG_DIR}/.installed ]; then
   touch ${ADDONCFG_DIR}/.installed
   exit 10
 fi
-# Update / reinstall (config dir survives uninstall): no reboot needed —
-# restart the service so the freshly installed code runs immediately.
+if [ ${IFACE_ADDED} -eq 1 ]; then
+  # Interface entry was re-added — ReGa must reboot to pick it up
+  exit 10
+fi
+# Pure update (interface already registered): no reboot needed — restart the
+# service so the freshly installed code runs immediately.
 ${RCD_DIR}/${ADDONNAME} restart >/dev/null 2>&1
 exit 0
