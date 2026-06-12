@@ -13,6 +13,8 @@ interface WebServerDeps {
   getHmPort: () => number;
   getInterfaceName: () => string;
   configPath: string;
+  // Persistent data dir (devices.json, ccu-callbacks.json) — target of factoryReset
+  dataDir: string;
   restartBridge: () => Promise<void>;
   setDeviceExposed: (address: string, exposed: boolean) => Promise<void>;
   setRelayState: (address: string, channel: number, on: boolean) => Promise<void>;
@@ -169,9 +171,40 @@ export class WebServer {
         this.handleRestartBridge(res);
         break;
 
+      case 'factoryReset':
+        if (req.method !== 'POST') { this.sendJson(res, 405, { error: 'POST required' }); return; }
+        this.handleFactoryReset(res);
+        break;
+
       default:
         this.sendJson(res, 404, { error: `Unknown method: ${method}` });
     }
+  }
+
+  // Deletes everything the addon persists (uninstall deliberately preserves
+  // the config dir, so this is the explicit "start over / purge before
+  // uninstall" path): device address mapping, exposure config, CCU callback
+  // registrations. The CCU keeps its learned SHELLYnnnn devices — they become
+  // orphans until re-exposed and re-taught.
+  private handleFactoryReset(res: http.ServerResponse): void {
+    const targets = [
+      this.deps.configPath,
+      path.join(this.deps.dataDir, 'devices.json'),
+      path.join(this.deps.dataDir, 'ccu-callbacks.json'),
+    ];
+    const deleted: string[] = [];
+    for (const f of targets) {
+      try {
+        if (fs.existsSync(f)) { fs.unlinkSync(f); deleted.push(path.basename(f)); }
+      } catch (err) {
+        getLogger().error(`Factory reset: failed to delete ${f}: ${err}`);
+      }
+    }
+    getLogger().warn(`Factory reset via Web UI — deleted: ${deleted.join(', ') || '(nothing)'}`);
+    this.sendJson(res, 202, { success: true, message: `Deleted: ${deleted.join(', ') || 'nothing'}. Restarting.` });
+    this.deps.restartBridge().catch((err) => {
+      getLogger().error(`Restart after factory reset failed: ${err}`);
+    });
   }
 
   private handleRestartBridge(res: http.ServerResponse): void {

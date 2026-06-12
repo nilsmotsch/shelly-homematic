@@ -190,6 +190,7 @@ async function main(): Promise<void> {
       getHmPort: () => bridgeRef.bridge.getHmPort(),
       getInterfaceName: () => bridgeRef.bridge.getInterfaceName(),
       configPath,
+      dataDir: DATA_DIR || '.',
       restartBridge,
       setDeviceExposed: (address, exposed) => bridgeRef.bridge.setDeviceExposed(address, exposed),
       setRelayState: (address, channel, on) => bridgeRef.bridge.setRelayState(address, channel, on),
