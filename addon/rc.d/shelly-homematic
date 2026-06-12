@@ -144,7 +144,10 @@ EOF
       rm -rf ${ADDON_DIR}
       rm -f ${CONFIG_DIR}/rc.d/${ADDON_NAME}
       rm -rf ${CONFIG_DIR}/addons/www/${ADDON_NAME}
-      rm -rf ${ADDONCFG_DIR}
+      # ${ADDONCFG_DIR} is deliberately PRESERVED: it holds config.json and
+      # devices.json (the persistent SHELLYnnnn↔device mapping) — deleting it
+      # would scramble all device addresses on a reinstall and orphan every
+      # CCU device. Full purge: rm -rf ${ADDONCFG_DIR} manually.
     } >/dev/null 2>&1
     ;;
   *)
