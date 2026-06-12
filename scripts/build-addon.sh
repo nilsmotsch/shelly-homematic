@@ -36,7 +36,8 @@ echo "==> Bundling app to single CJS file (target: node18)"
 mkdir -p "${PAYLOAD}/dist"
 npx esbuild "${ROOT_DIR}/dist/index.js" --bundle --platform=node \
     --target=node18 --format=cjs \
-    --log-level=warning --outfile="${PAYLOAD}/dist/index.js"
+    --log-level=warning --outfile="${PAYLOAD}/dist/index.js" \
+    --metafile="${ROOT_DIR}/build/esbuild-meta.json"
 
 echo "==> Staging payload"
 cp -R "${ROOT_DIR}/html" "${PAYLOAD}/html"
@@ -57,6 +58,19 @@ tar -xJf "${NODE_CACHE_DIR}/${NODE_TARBALL}" -C "${PAYLOAD}/node/bin" \
     --strip-components=2 "node-v${NODE_VERSION}-linux-armv6l/bin/node"
 chmod 755 "${PAYLOAD}/node/bin/node"
 touch "${PAYLOAD}/node/.nobackup"
+
+echo "==> Collecting third-party licenses"
+node "${ROOT_DIR}/scripts/generate-third-party-licenses.mjs" \
+    "${ROOT_DIR}/build/esbuild-meta.json" "${PAYLOAD}/THIRD-PARTY-LICENSES.txt"
+{
+  echo
+  echo "========================================================================"
+  echo "Node.js v${NODE_VERSION} (bundled runtime binary, node/bin/node)"
+  echo "https://nodejs.org/"
+  echo "========================================================================"
+  echo
+  tar -xJOf "${NODE_CACHE_DIR}/${NODE_TARBALL}" "node-v${NODE_VERSION}-linux-armv6l/LICENSE"
+} >> "${PAYLOAD}/THIRD-PARTY-LICENSES.txt"
 
 echo "==> Staging addon installer"
 cp "${ROOT_DIR}/addon/update_script" "${STAGING}/update_script"
