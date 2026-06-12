@@ -257,7 +257,8 @@ async function toggleExposed(address, exposed) {
     });
     const dev = allDevices.find(d => d.address === address);
     if (dev) dev.exposed = exposed;
-    document.getElementById('expose-alert').style.display = '';
+    // Exposure changes apply live (the bridge announces/removes the device
+    // at the CCU immediately) — no restart hint needed.
   } catch (err) {
     console.error('Failed to toggle exposure:', err);
     alert('Failed to save. Check bridge logs.');
