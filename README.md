@@ -48,7 +48,7 @@ Verified on real hardware against a CCU3:
 |---|---|---|
 | Shelly Plus 2PM (switch mode) | ✅ Tested | Switching from CCU & Matter, live state updates, power/voltage/current/energy readings |
 | Shelly Mini 1 Gen3 | ✅ Tested | Switching, live state updates |
-| Shelly Mini PM Gen3 | ⚠️ Partially | Registers as power meter; readings use the same verified code path as Plus 2PM but not independently checked |
+| Shelly Mini PM Gen3 | ✅ Tested | Standalone power meter readings in the CCU |
 | Shelly Plus 2PM (cover mode) | ✅ Tested | Up/stop/down and positioning from the CCU, native blind UI, position feedback |
 | Shelly Plus 0-10V Dimmer | ✅ Tested | Level control from the CCU, native dimmer UI, live state updates |
 | Shelly 2.5 (SHSW-25, Gen1) | ⚠️ Partially | Discovered, registered and taught in; Gen1 command path (switching) not yet verified |
