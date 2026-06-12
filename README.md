@@ -65,6 +65,10 @@ The CCU integration itself (teach-in, native controls, device naming, service me
 
 The addon bundles its own Node.js runtime (armv7/armv6) — nothing else needs to be installed on the CCU. Configuration and device mappings live in `/usr/local/etc/config/addons/shelly-homematic/` and survive addon updates.
 
+### Uninstall / start over
+
+Uninstalling the addon deliberately **preserves** its stored data (the device address mapping and exposure config), so an uninstall→reinstall cycle is lossless: all devices keep their `SHELLYnnnn` addresses and the CCU's room/program assignments stay intact. To wipe everything — before removing the addon for good, or to start from scratch — use the **Factory Reset** button in the Web UI dashboard (deletes the address mapping, configuration and CCU callback registrations; devices already learned by the CCU become orphans until re-exposed and re-taught).
+
 ### Password-protected Shellys
 
 Credentials are never stored in config files. Put them in `/usr/local/etc/config/addons/shelly-homematic/shelly.env`:
