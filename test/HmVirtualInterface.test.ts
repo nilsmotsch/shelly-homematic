@@ -176,6 +176,34 @@ describe('outbound CCU client serialization', () => {
     expect(bodies[0]).toContain('SHELLY0003');
   });
 
+  test('putParamset VALUES routes each entry through onSetValue, MASTER is ack-only', async () => {
+    const calls: Array<[string, number, string, unknown]> = [];
+    const device: DeviceInfo = {
+      hmAddress: 'SHELLY0006',
+      mac: 'aabbcc000001',
+      model: 'Plus2PM',
+      channels: [{ kind: 'SWITCH', channelIdx: 1 }],
+      getState: () => ({}),
+    };
+    const iface = new HmVirtualInterface({
+      port: 0,
+      bindHost: '127.0.0.1',
+      interfaceId: 'ShellyHM',
+      getDevices: () => [device],
+      onSetValue: async (addr, ch, key, value) => { calls.push([addr, ch, key, value]); },
+      dataDir: '/tmp',
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const d = (iface as any).dispatchSingle.bind(iface);
+    expect(await d('putParamset', ['SHELLY0006:1', 'VALUES', { STATE: true, ON_TIME: 30 }])).toBe('');
+    expect(calls).toEqual([
+      ['SHELLY0006', 1, 'STATE', true],
+      ['SHELLY0006', 1, 'ON_TIME', 30],
+    ]);
+    expect(await d('putParamset', ['SHELLY0006', 'MASTER', { INTERNAL_KEYS_VISIBLE: false }])).toBe('');
+    expect(calls).toHaveLength(2); // MASTER must not trigger commands
+  });
+
   test('event callback delivers err-free with Content-Length', async () => {
     const { server, url, bodies } = await captureServer();
     const iface = makeIface();
