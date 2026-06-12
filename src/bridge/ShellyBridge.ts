@@ -12,7 +12,7 @@ import { getLogger } from '../utils/Logger';
 const ACTUATOR_KINDS = new Set<string>(['SWITCH', 'DIMMER', 'BLIND']);
 // Datapoints that live on the POWERMETER channel (HM channel 2) when the
 // device is an actuator+meter combo (HM-ES-PMSw1-Pl layout)
-const POWER_KEYS = new Set(['POWER', 'ENERGY_COUNTER', 'VOLTAGE', 'CURRENT']);
+const POWER_KEYS = new Set(['POWER', 'ENERGY_COUNTER', 'VOLTAGE', 'CURRENT', 'FREQUENCY']);
 
 // One HM device per Shelly channel: `primary` is the functional channel
 // (HM channel 1); `meter` is a companion power meter at the same idx,

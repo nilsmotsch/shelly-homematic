@@ -33,6 +33,7 @@ export const CHANNEL_VALUE_MAPS: Record<ChannelKind, ValueMapping> = {
       if (key === 'ENERGY_COUNTER') return { hmKey: 'ENERGY_COUNTER', hmValue: value };
       if (key === 'VOLTAGE') return { hmKey: 'VOLTAGE', hmValue: value };
       if (key === 'CURRENT') return { hmKey: 'CURRENT', hmValue: (value as number) * 1000 }; // A → mA
+      if (key === 'FREQUENCY') return { hmKey: 'FREQUENCY', hmValue: value };
       return null;
     },
     toShelly(hmKey, hmValue) {
@@ -118,6 +119,7 @@ export const CHANNEL_VALUE_MAPS: Record<ChannelKind, ValueMapping> = {
       if (key === 'ENERGY_COUNTER') return { hmKey: 'ENERGY_COUNTER', hmValue: value };
       if (key === 'VOLTAGE') return { hmKey: 'VOLTAGE', hmValue: value };
       if (key === 'CURRENT') return { hmKey: 'CURRENT', hmValue: (value as number) * 1000 }; // A → mA
+      if (key === 'FREQUENCY') return { hmKey: 'FREQUENCY', hmValue: value };
       return null;
     },
     toShelly(_hmKey, _hmValue) { return null; },

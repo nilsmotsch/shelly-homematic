@@ -15,7 +15,10 @@
 // v9: POWERMETER BOOT datapoint — the CCU's auto-created energy-statistics
 // program reads DPByControl('POWERMETER.BOOT') every minute and threw a
 // ScriptRuntimeError without it.
-export const DESCRIPTOR_VERSION = 9;
+// v10: POWERMETER FREQUENCY datapoint (mapped from Shelly Gen2 'freq') — the
+// WebUI powermeter control (esp/controls/powermeter.fn) dereferences
+// DPByControl('POWERMETER.FREQUENCY') unguarded when rendering the channel.
+export const DESCRIPTOR_VERSION = 10;
 
 export type ChannelKind =
   | 'SWITCH'
@@ -129,6 +132,7 @@ const POWERMETER_PARAMSET: ParamsetDescription = withIds({
   ENERGY_COUNTER: { TYPE: 'FLOAT', OPERATIONS: OPS_RE, FLAGS: 1, DEFAULT: 0.0, MIN: 0.0, MAX: 838860.7, UNIT: 'Wh', TAB_ORDER: 1, CONTROL: 'POWERMETER.ENERGY_COUNTER' },
   VOLTAGE: { TYPE: 'FLOAT', OPERATIONS: OPS_RE, FLAGS: 1, DEFAULT: 0.0, MIN: 0.0, MAX: 980.0, UNIT: 'V', TAB_ORDER: 2, CONTROL: 'POWERMETER.VOLTAGE' },
   CURRENT: { TYPE: 'FLOAT', OPERATIONS: OPS_RE, FLAGS: 1, DEFAULT: 0.0, MIN: 0.0, MAX: 16000.0, UNIT: 'mA', TAB_ORDER: 3, CONTROL: 'POWERMETER.CURRENT' },
+  FREQUENCY: { TYPE: 'FLOAT', OPERATIONS: OPS_RE, FLAGS: 1, DEFAULT: 50.0, MIN: 48.72, MAX: 51.27, UNIT: 'Hz', TAB_ORDER: 5, CONTROL: 'POWERMETER.FREQUENCY' },
 });
 
 export function getParamsetDescription(kind: ChannelKind): ParamsetDescription {
