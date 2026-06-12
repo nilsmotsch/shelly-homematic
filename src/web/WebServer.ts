@@ -201,7 +201,13 @@ export class WebServer {
       }
     }
     getLogger().warn(`Factory reset via Web UI — deleted: ${deleted.join(', ') || '(nothing)'}`);
-    this.sendJson(res, 202, { success: true, message: `Deleted: ${deleted.join(', ') || 'nothing'}. Restarting.` });
+    this.sendJson(res, 202, {
+      success: true,
+      message:
+        `Deleted: ${deleted.join(', ') || 'nothing'}. Bridge restarting. ` +
+        'Restart the CCU now — ReGa only registers interfaces at its own startup, ' +
+        'so devices cannot be announced until then.',
+    });
     this.deps.restartBridge().catch((err) => {
       getLogger().error(`Restart after factory reset failed: ${err}`);
     });

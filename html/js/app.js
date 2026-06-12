@@ -349,8 +349,9 @@ async function factoryReset() {
     '• exposure configuration (config.json)\n' +
     '• CCU callback registrations\n\n' +
     'Devices already learned by the CCU become orphans and must be ' +
-    're-exposed and re-taught. Use this to start over or before ' +
-    'uninstalling the addon for good.\n\nContinue?';
+    're-exposed and re-taught, and the CCU must be RESTARTED afterwards ' +
+    '(ReGa only registers interfaces at its own startup). Use this to ' +
+    'start over or before uninstalling the addon for good.\n\nContinue?';
   if (!confirm(warning)) return;
   try {
     const result = await fetchApi('factoryReset', { method: 'POST' });
