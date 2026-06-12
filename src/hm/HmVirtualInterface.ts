@@ -468,8 +468,15 @@ export class HmVirtualInterface {
       // Shapes mirror thkl's Homematic-Virtual-Interface reference.
       case 'getLinks':
       case 'getLinkPeers':
-      case 'reportValueUsage':
         return [];
+
+      // Spec: reportValueUsage(address, valueId, refCounter) → Boolean.
+      // Returning [] makes ReGa log "invalid result type" on every call —
+      // it calls this per datapoint when deleting devices and when opening
+      // the device settings page, which then aborts with the WebUI's
+      // "internal error" page.
+      case 'reportValueUsage':
+        return true;
 
       case 'getParamsetId': {
         // Stable cache key per channel kind + paramset — ReGa caches paramset
