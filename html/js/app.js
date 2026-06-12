@@ -51,7 +51,7 @@ async function refreshDashboard() {
     document.getElementById('hm-port').textContent = data.hmPort ?? '--';
     document.getElementById('uptime').textContent = formatUptime(data.uptime || 0);
     document.getElementById('interface-name').textContent = data.interfaceName || '--';
-    document.getElementById('sidebar-version').textContent = 'v1.0.0';
+    document.getElementById('sidebar-version').textContent = data.version ? 'v' + data.version : '';
     document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
   } catch (err) {
     console.error('Dashboard refresh failed:', err);

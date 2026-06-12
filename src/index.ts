@@ -1,6 +1,7 @@
 import { ShellyBridge } from './bridge/ShellyBridge';
 import { WebServer } from './web/WebServer';
 import { initLogger, getLogger } from './utils/Logger';
+import { appVersion } from './utils/Version';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -136,7 +137,7 @@ async function main(): Promise<void> {
   const log = getLogger();
 
   log.info('╔═══════════════════════════════════════════╗');
-  log.info('║       Shelly-Homematic Bridge v1.0        ║');
+  log.info(`║  Shelly-Homematic Bridge v${appVersion()}`.padEnd(44) + '║');
   log.info('║  Expose Shelly devices via Homematic HM   ║');
   log.info('╚═══════════════════════════════════════════╝');
 

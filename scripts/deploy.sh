@@ -82,6 +82,8 @@ if [ "${1:-}" = "--first" ]; then
   ${SCP} "${ROOT_DIR}/addon/VERSION" "${CCU_SSH_USER}@${CCU_HOST}:${ADDON_DIR}/VERSION" 2>/dev/null \
     || echo "0.1.0" | ${SSH} "cat > ${ADDON_DIR}/VERSION"
   ${SCP} "${ROOT_DIR}/config.example.json" "${CCU_SSH_USER}@${CCU_HOST}:${ADDON_DIR}/config.example.json"
+  # package.json is the version source for the app (utils/Version.ts)
+  ${SCP} "${ROOT_DIR}/package.json" "${CCU_SSH_USER}@${CCU_HOST}:${ADDON_DIR}/package.json"
 
   # Upload rc.d script
   ${SCP} "${ROOT_DIR}/addon/rc.d/${ADDON_NAME}" "${CCU_SSH_USER}@${CCU_HOST}:${RCD}"
@@ -129,8 +131,10 @@ if [ "${1:-}" = "--first" ]; then
       echo \"registered ShellyHM in \$F\"; \
     done"
 
-  echo "==> Starting service"
-  ${SSH} "${RCD} start"
+  echo "==> Restarting service"
+  # restart, not start: do_start no-ops when the daemon is already running, so
+  # a plain start would leave the OLD process (and its old node binary) alive
+  ${SSH} "${RCD} restart"
 
 else
   echo "==> Uploading bundle to ${CCU_HOST}"
