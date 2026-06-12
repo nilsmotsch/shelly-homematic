@@ -152,6 +152,10 @@ npm run build:addon  # build the CCU addon tarball (dist-addon/)
 
 `scripts/deploy.sh` provides a fast inner loop against a real CCU (pushes the bundle over SSH and restarts the addon); it reads `CCU_HOST`/`CCU_SSH_USER`/`CCU_SSH_PASSWORD` from a gitignored `.env.local`.
 
+## Disclaimer
+
+This is an independent community project, developed in spare time. It is **not** affiliated with, endorsed by, or supported by Allterco Robotics / Shelly Group (Shelly), eQ-3 AG (Homematic, Homematic IP), or any other vendor. All product names, logos, and trademarks are property of their respective owners and are used here for identification only. The software is provided as-is, without warranty of any kind — use at your own risk.
+
 ## License
 
 [MIT](LICENSE)
