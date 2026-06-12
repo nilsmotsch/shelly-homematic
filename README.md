@@ -137,7 +137,7 @@ Shelly (mDNS/WebSocket/HTTP/CoIoT)
                     CCU (ReGaHss, HMServer, …)
 ```
 
-The CCU treats the bridge as one of its device interfaces: on startup it calls `init()` with a callback URL, pulls device descriptions (`listDevices`, `getParamsetDescription`, …), and from then on receives live `event` callbacks. Considerable care went into compatibility with the CCU's strict XML-RPC parser (explicit `Content-Length`, no self-closing tags, explicit `<double>` for float values, correct paramset `FLAGS`/`CONTROL` attributes) — see `CLAUDE.md` for the full list of hard-won constraints.
+The CCU treats the bridge as one of its device interfaces: on startup it calls `init()` with a callback URL, pulls device descriptions (`listDevices`, `getParamsetDescription`, …), and from then on receives live `event` callbacks. Considerable care went into compatibility with the CCU's strict XML-RPC parser (explicit `Content-Length`, no self-closing tags, explicit `<double>` for float values, correct paramset `FLAGS`/`CONTROL` attributes) — documented in comments where it matters in the code.
 
 Thanks to [thkl/Homematic-Virtual-Interface](https://github.com/thkl/Homematic-Virtual-Interface), whose working implementation served as the reference for much of the CCU interface behavior, and to the CUxD project for proving the device-impersonation approach.
 
