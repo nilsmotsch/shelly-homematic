@@ -55,4 +55,7 @@ if [ ! -f ${ADDONCFG_DIR}/.installed ]; then
   touch ${ADDONCFG_DIR}/.installed
   exit 10
 fi
+# Update / reinstall (config dir survives uninstall): no reboot needed —
+# restart the service so the freshly installed code runs immediately.
+${RCD_DIR}/${ADDONNAME} restart >/dev/null 2>&1
 exit 0
