@@ -127,10 +127,11 @@ case "$1" in
   uninstall)
     logger -t homematic -p user.info "removing ${ADDON_NAME}"
     {
-      do_stop
       # Remove our learned devices from ReGa — without this they linger as
       # undeletable orphans: the WebUI delete flow needs deleteDevice() on
-      # our interface, which is gone after the uninstall.
+      # our interface, which is gone after the uninstall. Run while the
+      # daemon is still up: ReGa calls reportValueUsage on the interface for
+      # every removed datapoint and logs errors if nobody answers.
       tclsh <<'TCLEOF'
 catch {
   load tclrega.so
@@ -147,6 +148,7 @@ catch {
   }
 }
 TCLEOF
+      do_stop
       tclsh <<EOF
 set f ${CONFIG_DIR}/hm_addons.cfg
 if {[file exists \$f]} {
