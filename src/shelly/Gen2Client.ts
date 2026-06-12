@@ -72,11 +72,22 @@ export class Gen2Client extends EventEmitter {
     const ws = new WebSocket(url);
     this.ws = ws;
 
+    // The Shelly binds its NotifyStatus destination to the rpc `src` string,
+    // one session per src. A fixed src means that after a bridge restart the
+    // binding can stick to the previous (half-dead) TCP session and the new
+    // connection silently receives NO notifications until the zombie times
+    // out. A unique src per connection always gets a fresh binding.
+    const src = `shelly-homematic-${crypto.randomBytes(4).toString('hex')}`;
+    let keepalive: NodeJS.Timeout | null = null;
+
     ws.on('open', () => {
       this.backoff = 1000;
-      getLogger().debug(`Gen2 WS connected: ${this.ip}`);
+      getLogger().debug(`Gen2 WS connected: ${this.ip} (src=${src})`);
       // Send src registration + initial status request
-      ws.send(JSON.stringify({ id: this.rpcId++, src: 'shelly-homematic', method: 'Shelly.GetStatus', params: {} }));
+      ws.send(JSON.stringify({ id: this.rpcId++, src, method: 'Shelly.GetStatus', params: {} }));
+      // Keepalive so the Shelly notices dead peers quickly and our session
+      // isn't dropped as idle.
+      keepalive = setInterval(() => ws.ping(), 30000);
       this.emit('online');
     });
 
@@ -89,6 +100,7 @@ export class Gen2Client extends EventEmitter {
 
     ws.on('close', () => {
       getLogger().debug(`Gen2 WS disconnected: ${this.ip}`);
+      if (keepalive) { clearInterval(keepalive); keepalive = null; }
       this.emit('offline');
       this.scheduleReconnect();
     });
