@@ -141,6 +141,41 @@ describe('outbound CCU client serialization', () => {
     expect(xml).toContain('<double>1</double>');
   });
 
+  test('deleteDevice unexposes via callback, confirms with deleteDevices, returns array', async () => {
+    const { server, url, bodies } = await captureServer();
+    const device: DeviceInfo = {
+      hmAddress: 'SHELLY0003',
+      mac: 'aabbcc000003',
+      model: 'Mini1G3',
+      channels: [{ kind: 'SWITCH', channelIdx: 1 }],
+      getState: () => ({}),
+    };
+    const unlearned: string[] = [];
+    const iface = new HmVirtualInterface({
+      port: 0,
+      bindHost: '127.0.0.1',
+      interfaceId: 'ShellyHM',
+      getDevices: () => [device],
+      onSetValue: async () => undefined,
+      onCcuDeleteDevice: (addr) => unlearned.push(addr),
+      dataDir: '/tmp',
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const client = (iface as any).createCcuClient(url);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (iface as any).ccuCallbacks.set('ReGa', { client, interfaceId: 'ReGa', url: url.href });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await (iface as any).dispatchSingle('deleteDevice', ['SHELLY0003', 0]);
+    await waitFor(() => bodies.length === 1);
+    server.close();
+
+    expect(result).toEqual([]);
+    expect(unlearned).toEqual(['SHELLY0003']);
+    expect(bodies[0]).toContain('<methodName>deleteDevices</methodName>');
+    expect(bodies[0]).toContain('SHELLY0003');
+  });
+
   test('event callback delivers err-free with Content-Length', async () => {
     const { server, url, bodies } = await captureServer();
     const iface = makeIface();

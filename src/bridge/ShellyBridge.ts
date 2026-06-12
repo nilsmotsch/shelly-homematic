@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import { ShellyConnector, DiscoveredDevice } from '../shelly/ShellyConnector';
 import { HmVirtualInterface, DeviceInfo } from '../hm/HmVirtualInterface';
 import { ChannelKind, DESCRIPTOR_VERSION } from '../hm/HmDeviceModel';
@@ -61,6 +62,8 @@ export interface BridgeConfig {
   };
   web: { enabled: boolean; port: number };
   logging: { level: string; file: string };
+  // Set by index.ts after loading — where exposure changes get persisted
+  configPath?: string;
 }
 
 function parseChannelKey(address: string): { mac: string; channelIdx: number } {
@@ -114,8 +117,31 @@ export class ShellyBridge {
       onSetValue: (hmAddress, channelIdx, key, value) =>
         this.onCcuSetValue(hmAddress, channelIdx, key, value),
       onCcuRegistered: () => this.onCcuRegistered(),
+      onCcuDeleteDevice: (hmAddress) => this.onCcuDeleteDevice(hmAddress),
       dataDir,
     });
+  }
+
+  // CCU WebUI "Löschen → Gerät ablernen": unexpose the channel and persist it
+  // to config.json — without persistence the next bridge restart would still
+  // see exposed=true and re-announce the device straight back into the CCU.
+  private onCcuDeleteDevice(hmAddress: string): void {
+    const ref = this.registry.getMacAndChannel(hmAddress);
+    if (!ref) return;
+    const channelKey = `${ref.mac}:${ref.channelIdx}`;
+    this.exposedOverrides[channelKey] = false;
+    if (this.config.configPath) {
+      try {
+        const raw = JSON.parse(fs.readFileSync(this.config.configPath, 'utf-8'));
+        if (!raw.devices) raw.devices = {};
+        if (!raw.devices.exposed) raw.devices.exposed = {};
+        raw.devices.exposed[channelKey] = false;
+        fs.writeFileSync(this.config.configPath, JSON.stringify(raw, null, 2));
+      } catch (err) {
+        getLogger().error(`Failed to persist unexpose of ${channelKey}: ${err}`);
+      }
+    }
+    getLogger().info(`Channel ${channelKey} (${hmAddress}) unexposed after CCU unlearn`);
   }
 
   async start(): Promise<void> {

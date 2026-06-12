@@ -80,23 +80,25 @@ function mergeConfig(
   return merged as typeof DEFAULT_CONFIG;
 }
 
-function loadConfig(): typeof DEFAULT_CONFIG {
+function loadConfig(): typeof DEFAULT_CONFIG & { configPath: string } {
   const log = getLogger();
   const configPath = resolveConfigPath();
   seedAddonConfigIfMissing(configPath);
 
+  let config = DEFAULT_CONFIG;
   if (fs.existsSync(configPath)) {
     try {
       const fileConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
       log.info(`Loaded configuration from ${configPath}`);
-      return mergeConfig(DEFAULT_CONFIG, fileConfig);
+      config = mergeConfig(DEFAULT_CONFIG, fileConfig);
     } catch (err) {
       log.error(`Failed to load config from ${configPath}: ${err}`);
     }
+  } else {
+    log.info('Using default configuration');
   }
-
-  log.info('Using default configuration');
-  return DEFAULT_CONFIG;
+  // The bridge persists CCU-initiated exposure changes (deleteDevice) here
+  return { ...config, configPath };
 }
 
 function parseArgs(): Record<string, string> {

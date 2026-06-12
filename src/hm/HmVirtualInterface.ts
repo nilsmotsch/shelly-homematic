@@ -57,6 +57,9 @@ export interface HmVirtualInterfaceOptions {
   // Called after a CCU registered via init() — lets the bridge re-announce
   // devices whose descriptions changed since the CCU last saw them
   onCcuRegistered?: () => void;
+  // Called when the CCU unlearns a device (WebUI Löschen → deleteDevice RPC).
+  // The bridge unexposes the channel so it doesn't get re-announced.
+  onCcuDeleteDevice?: (hmAddress: string) => void;
   // Directory for persisting CCU callbacks across restarts (see saveCallbacks).
   dataDir?: string;
 }
@@ -313,6 +316,7 @@ export class HmVirtualInterface {
           'system.listMethods', 'system.multicall',
           'init', 'listDevices', 'getDeviceDescription',
           'getParamsetDescription', 'getParamset', 'getValue', 'setValue',
+          'deleteDevice',
           'ping', 'getLinks', 'reportValueUsage', 'setMetadata', 'getMetadata',
           'getAllMetadata', 'deleteMetadata', 'getInstallMode', 'setInstallMode',
         ];
@@ -433,6 +437,21 @@ export class HmVirtualInterface {
         const { device, channelIdx } = this.resolveAddress(address);
         if (device) await this.opts.onSetValue(device.hmAddress, channelIdx, key, value);
         return '';
+      }
+
+      // WebUI "Löschen → Gerät ablernen": ReGa asks the interface to unlearn
+      // the device and expects a deleteDevices callback as confirmation —
+      // without it the device never leaves the CCU's list. We unexpose the
+      // channel (persisted) so it isn't re-announced; the SHELLYnnnn address
+      // stays reserved for a later re-expose.
+      case 'deleteDevice': {
+        const address = (params[0] as string || '').split(':')[0];
+        if (address) {
+          getLogger().info(`CCU unlearned device ${address}`);
+          this.opts.onCcuDeleteDevice?.(address);
+          this.notifyDeleteDevices([address]);
+        }
+        return [];
       }
 
       case 'ping': {
