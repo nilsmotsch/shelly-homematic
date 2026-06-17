@@ -497,6 +497,9 @@ export class ShellyBridge {
       case 'setRelay':
         await this.connector.setRelay(mac, shellyIdx, !!toShelly.shellyParams.on);
         break;
+      case 'toggleRelay':
+        await this.connector.toggleRelay(mac, shellyIdx);
+        break;
       case 'setLevel':
         await this.connector.setLevel(mac, shellyIdx, toShelly.shellyParams.level as number);
         break;

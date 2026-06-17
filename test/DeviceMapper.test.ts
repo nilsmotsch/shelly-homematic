@@ -24,6 +24,15 @@ describe('CHANNEL_VALUE_MAPS.SWITCH', () => {
     expect(r?.shellyParams.on).toBe(true);
   });
 
+  test('HM TOGGLE → toggleRelay (value ignored)', () => {
+    expect(map.toShelly('TOGGLE', true)?.shellyMethod).toBe('toggleRelay');
+    expect(map.toShelly('TOGGLE', false)?.shellyMethod).toBe('toggleRelay');
+  });
+
+  test('TOGGLE is write-only (no inbound mapping)', () => {
+    expect(map.toHomematic('TOGGLE', true)).toBeNull();
+  });
+
   test('unknown key → null', () => {
     expect(map.toHomematic('UNKNOWN', 1)).toBeNull();
   });

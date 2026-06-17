@@ -78,6 +78,16 @@ export class ShellyConnector extends EventEmitter {
     }
   }
 
+  async toggleRelay(address: string, channel: number): Promise<void> {
+    const dev = this.devices.get(address);
+    if (!dev) throw new Error(`Device ${address} not found`);
+    if (dev.gen2) {
+      await dev.gen2.toggleSwitch(channel);
+    } else if (dev.gen1) {
+      await dev.gen1.toggleRelay(channel);
+    }
+  }
+
   async setLevel(address: string, channel: number, levelPct: number): Promise<void> {
     const dev = this.devices.get(address);
     if (!dev) throw new Error(`Device ${address} not found`);

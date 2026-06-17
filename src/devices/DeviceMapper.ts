@@ -38,6 +38,10 @@ export const CHANNEL_VALUE_MAPS: Record<ChannelKind, ValueMapping> = {
     },
     toShelly(hmKey, hmValue) {
       if (hmKey === 'STATE') return { shellyMethod: 'setRelay', shellyParams: { on: !!hmValue } };
+      // TOGGLE is a momentary ACTION: any write flips the relay via Shelly's
+      // native toggle command (Gen2 Switch.Toggle / Gen1 ?turn=toggle), so the
+      // value carries no meaning. Lets programs say "umschalten" in one step.
+      if (hmKey === 'TOGGLE') return { shellyMethod: 'toggleRelay', shellyParams: {} };
       return null;
     },
   },

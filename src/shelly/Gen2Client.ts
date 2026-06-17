@@ -50,6 +50,10 @@ export class Gen2Client extends EventEmitter {
     await this.rpcHttp('Switch.Set', { id: idx, on });
   }
 
+  async toggleSwitch(idx: number): Promise<void> {
+    await this.rpcHttp('Switch.Toggle', { id: idx });
+  }
+
   async setLight(idx: number, on: boolean, brightness?: number): Promise<void> {
     const params: Record<string, unknown> = { id: idx, on };
     if (brightness !== undefined) params.brightness = brightness;

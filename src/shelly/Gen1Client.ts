@@ -41,6 +41,10 @@ export class Gen1Client extends EventEmitter {
     await this.get(`/relay/${idx}?turn=${on ? 'on' : 'off'}`);
   }
 
+  async toggleRelay(idx: number): Promise<void> {
+    await this.get(`/relay/${idx}?turn=toggle`);
+  }
+
   async setLight(brightness: number, on: boolean): Promise<void> {
     const turn = on || brightness > 0 ? 'on' : 'off';
     await this.get(`/light/0?turn=${turn}&brightness=${brightness}`);

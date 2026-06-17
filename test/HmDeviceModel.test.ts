@@ -15,6 +15,13 @@ describe('getParamsetDescription', () => {
     expect(desc.WORKING.OPERATIONS).toBe(5); // read|event (no write)
   });
 
+  test('SWITCH has write-only visible TOGGLE action for programs', () => {
+    const desc = getParamsetDescription('SWITCH');
+    expect(desc.TOGGLE.TYPE).toBe('ACTION');
+    expect(desc.TOGGLE.OPERATIONS).toBe(2); // write only
+    expect(desc.TOGGLE.FLAGS & 1).toBe(1); // visible → enumerable in program editor
+  });
+
   test('DIMMER has LEVEL FLOAT rw with 0-1 range', () => {
     const desc = getParamsetDescription('DIMMER');
     expect(desc.LEVEL.TYPE).toBe('FLOAT');

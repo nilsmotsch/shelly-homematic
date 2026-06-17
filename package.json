@@ -1,6 +1,6 @@
 {
   "name": "shelly-homematic",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "A bridge that exposes Shelly devices to the Homematic CCU3/RaspberryMatic as virtual HM devices",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

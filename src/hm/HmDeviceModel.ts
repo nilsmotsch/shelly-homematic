@@ -18,7 +18,9 @@
 // v10: POWERMETER FREQUENCY datapoint (mapped from Shelly Gen2 'freq') — the
 // WebUI powermeter control (esp/controls/powermeter.fn) dereferences
 // DPByControl('POWERMETER.FREQUENCY') unguarded when rendering the channel.
-export const DESCRIPTOR_VERSION = 10;
+// v11: SWITCH TOGGLE datapoint — lets CCU programs flip a relay in one step
+// ("umschalten") instead of scripting STATE=!STATE.
+export const DESCRIPTOR_VERSION = 11;
 
 export type ChannelKind =
   | 'SWITCH'
@@ -85,6 +87,13 @@ const MAINTENANCE_PARAMSET: ParamsetDescription = withIds({
 const SWITCH_PARAMSET: ParamsetDescription = withIds({
   STATE: { TYPE: 'BOOL', OPERATIONS: OPS_RWE, FLAGS: 1, DEFAULT: false, TAB_ORDER: 0, CONTROL: 'SWITCH.STATE' },
   WORKING: { TYPE: 'BOOL', OPERATIONS: OPS_RE, FLAGS: 3, DEFAULT: false, TAB_ORDER: 1 },
+  // Not part of the real HM-LC-Sw1 rftype — a convenience ACTION so programs can
+  // flip the relay in one step ("umschalten") instead of scripting STATE=!STATE.
+  // Write-only (OPS 2), visible so it appears in the program editor; no CONTROL
+  // (no rftype widget keys off it). The mapper routes any write to Shelly's
+  // native toggle command. Extra VALUES datapoints don't disturb the native
+  // SWITCH control, which keys on CONTROL='SWITCH.STATE'.
+  TOGGLE: { TYPE: 'ACTION', OPERATIONS: 2, FLAGS: 1, DEFAULT: false, TAB_ORDER: 2 },
 });
 
 const DIMMER_PARAMSET: ParamsetDescription = withIds({
