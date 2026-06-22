@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import * as http from 'http';
-import { Bonjour, Service } from 'bonjour-service';
+import { Bonjour, Service, Browser } from 'bonjour-service';
 import { getLogger } from '../utils/Logger';
 
 export interface ShellyInfo {
@@ -18,6 +18,15 @@ export class ShellyDiscovery extends EventEmitter {
   private bonjour: Bonjour;
   private rescanTimer: NodeJS.Timeout | null = null;
   private seen = new Set<string>();
+  // mDNS browsers are created ONCE and kept for the lifetime of discovery.
+  // Each bonjour.find() attaches a permanent 'response' listener to the shared
+  // mDNS socket and is never auto-removed, so calling find() on every rescan
+  // (as we used to) leaked one Browser — plus its listener and service cache —
+  // every interval. Over days that accumulated thousands of browsers, each
+  // re-querying on every multicast packet: a slow memory leak and a query
+  // storm that pinned RSS/CPU. We now create the browsers once and just
+  // re-issue their PTR query via update() to rescan.
+  private browsers: Browser[] = [];
 
   constructor(opts: { rescanInterval: number; manualDevices: string[] }) {
     super();
@@ -27,11 +36,17 @@ export class ShellyDiscovery extends EventEmitter {
   }
 
   start(): void {
-    this.scan();
+    if (this.browsers.length === 0) {
+      this.createBrowsers();
+    } else {
+      // Already running (e.g. manual rediscovery) — just re-query, never
+      // create another browser.
+      for (const b of this.browsers) b.update();
+    }
     this.probeManualDevices();
-    if (this.rescanInterval > 0) {
+    if (this.rescanInterval > 0 && !this.rescanTimer) {
       this.rescanTimer = setInterval(() => {
-        this.scan();
+        for (const b of this.browsers) b.update();
         this.probeManualDevices();
       }, this.rescanInterval);
     }
@@ -42,24 +57,31 @@ export class ShellyDiscovery extends EventEmitter {
       clearInterval(this.rescanTimer);
       this.rescanTimer = null;
     }
+    for (const b of this.browsers) {
+      try { b.stop(); } catch { /* ignore */ }
+    }
+    this.browsers = [];
     this.bonjour.destroy();
   }
 
-  private scan(): void {
+  // Create the persistent mDNS browsers (once). The browsers keep listening
+  // continuously, so devices that announce themselves between rescans are
+  // still picked up; rescan only forces a fresh PTR query.
+  private createBrowsers(): void {
     // Gen2+: _shelly._tcp
-    this.bonjour.find({ type: 'shelly' }, (svc: Service) => {
+    this.browsers.push(this.bonjour.find({ type: 'shelly' }, (svc: Service) => {
       const ip = svc.addresses?.[0] || svc.host;
       if (ip) this.probe(ip);
-    });
+    }));
 
     // Gen1: _http._tcp with hostname matching shelly*
-    this.bonjour.find({ type: 'http' }, (svc: Service) => {
+    this.browsers.push(this.bonjour.find({ type: 'http' }, (svc: Service) => {
       const host = svc.host || '';
       if (/^shelly/i.test(host)) {
         const ip = svc.addresses?.[0] || host;
         if (ip) this.probe(ip);
       }
-    });
+    }));
   }
 
   private probeManualDevices(): void {

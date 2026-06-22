@@ -9,6 +9,22 @@ VER=$(cat ${ADDON_DIR}/VERSION 2>/dev/null || echo "0.0.0")
 
 export SHELLY_HOMEMATIC_DATA_DIR=${ADDONCFG_DIR}
 
+# --- Memory footprint guardrails ------------------------------------------
+# The CCU3 has ~1 GB RAM and no swap; this addon co-resides with ReGaHss and
+# (typically) matter-homematic. Keep our resident set small so we don't induce
+# GC/CPU stalls in the neighbours.
+#  - MALLOC_ARENA_MAX: glibc otherwise allocates up to 8*nCPU per-thread malloc
+#    arenas that fragment and never shrink; Node runs ~10 threads, so this alone
+#    can balloon RSS by hundreds of MB. 2 arenas is plenty for our load.
+#  - UV_THREADPOOL_SIZE: we do no heavy fs/crypto work — 2 libuv workers suffice
+#    and trim per-thread stacks/arenas.
+#  - NODE_FLAGS: hard V8 heap ceiling. Our working set is a few-device bridge
+#    (well under 50 MB of JS), so a 96 MB old-space cap leaves generous headroom
+#    while making runaway growth fail fast instead of starving the box.
+export MALLOC_ARENA_MAX=2
+export UV_THREADPOOL_SIZE=2
+NODE_FLAGS="--max-old-space-size=96 --max-semi-space-size=2"
+
 # Load Shelly credentials from creds file if present — never baked into config.
 if [ -f ${ADDONCFG_DIR}/shelly.env ]; then
   . ${ADDONCFG_DIR}/shelly.env
@@ -75,7 +91,7 @@ do_start() {
   mkdir -p ${ADDONCFG_DIR}
   start-stop-daemon --start --quiet --oknodo --make-pidfile --background \
     --pidfile ${PIDFILE} \
-    --exec /bin/sh -- -c "exec ${NODE} ${ADDON_DIR}/dist/index.js >> ${LOGFILE} 2>&1"
+    --exec /bin/sh -- -c "exec ${NODE} ${NODE_FLAGS} ${ADDON_DIR}/dist/index.js >> ${LOGFILE} 2>&1"
   logger -t homematic -p user.info "started ${ADDON_NAME}"
 }
 
